@@ -1,0 +1,3 @@
+# Output products list for <System_clock_input>
+System_clock_input.xco
+System_clock_input_flist.txt

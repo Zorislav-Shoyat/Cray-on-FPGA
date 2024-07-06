@@ -1,0 +1,26 @@
+##########################################################################
+##
+## Zorislav Shoyat, 9/3/2014, 2:44
+##
+## VIRTUE INFRASTRUCTURE MACHINE,
+## VIRTUE INFRASTRUCTURE ELEMENT 'E2LP LED DRIVER PHYSICAL CONNECTIONS'
+##
+## NAME:
+##       E2LP_Led_output
+##
+## FUNCTION:
+##       Connect the LEDS[7:0] wires to the physical board over the FPGA
+##       pins (internally pads)
+##
+###########################################################################
+# UART constraints
+NET UART_CTS LOC = "A19"  |IOSTANDARD = "LVCMOS33";
+NET UART_RTS LOC = "B20"  |IOSTANDARD = "LVCMOS33";
+NET UART_TX LOC = "A20"  |IOSTANDARD = "LVCMOS33";
+NET UART_RX LOC = "A21"  |IOSTANDARD = "LVCMOS33";
+
+
+//NET "sio_ce" TNM_NET = "sio_ce";
+//TIMESPEC "TS_sio_ce" = PERIOD "sio_ce" 542534.7222 ps HIGH 50%;
+//NET "sio_ce_x4" TNM_NET = "sio_ce_x4";
+//TIMESPEC "TS_sio_ce_x4" = PERIOD "sio_ce_x4" 542534.7222 ps HIGH 50%;
