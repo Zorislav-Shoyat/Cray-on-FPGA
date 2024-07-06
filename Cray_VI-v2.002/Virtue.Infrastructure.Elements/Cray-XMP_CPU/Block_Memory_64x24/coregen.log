@@ -1,0 +1,72 @@
+INFO:sim:172 - Generating IP...
+Applying current project options...
+Finished applying current project options.
+Resolving generics for 'Block_Memory_64x24'...
+WARNING:sim - A core named 'Block_Memory_64x24' already exists in the project.
+   Output products for this core may be overwritten.
+Applying external generics to 'Block_Memory_64x24'...
+Delivering associated files for 'Block_Memory_64x24'...
+Delivering EJava files for 'Block_Memory_64x24'...
+Generating implementation netlist for 'Block_Memory_64x24'...
+INFO:sim - Pre-processing HDL files for 'Block_Memory_64x24'...
+Running synthesis for 'Block_Memory_64x24'
+Running ngcbuild...
+Writing VEO instantiation template for 'Block_Memory_64x24'...
+Writing Verilog behavioral simulation model for 'Block_Memory_64x24'...
+WARNING:sim - Overwriting existing file
+   C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure
+   .Elements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24/doc/blk_mem_gen_v7_3_vinfo.
+   html with file from view xilinx_documentation
+Delivered 1 file into directory
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24
+Generating ASY schematic symbol...
+INFO:sim:949 - Finished generation of ASY schematic symbol.
+Generating SYM schematic symbol for 'Block_Memory_64x24'...
+Generating metadata file...
+Regenerating ISE project file for 'Block_Memory_64x24'...
+Generating ISE project...
+XCO file found: Block_Memory_64x24.xco
+XMDF file found: Block_Memory_64x24_xmdf.tcl
+Adding
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.asy -view all -origin_type
+imported
+Adding
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.ngc -view all -origin_type
+created
+Checking file
+"C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.E
+lements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.ngc" for project device match
+...
+File
+"C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.E
+lements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.ngc" device information matches
+project device.
+Adding
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.sym -view all -origin_type
+imported
+Adding
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.v -view all -origin_type created
+INFO:HDLCompiler:1845 - Analyzing Verilog file
+   "C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructur
+   e.Elements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.v" into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding
+C:/Virtue.Infrastructure/Cray_VI_v05/remote_sources/_/_/Virtue.Infrastructure.El
+ements/Cray-XMP_CPU/tmp/_cg/Block_Memory_64x24.veo -view all -origin_type
+imported
+INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
+   Please set the new top explicitly by running the "project set top" command.
+   To re-calculate the new top automatically, set the "Auto Implementation Top"
+   property to true.
+Top level has been set to "/Block_Memory_64x24"
+Generating README file...
+Generating FLIST file...
+INFO:sim:948 - Finished FLIST file generation.
+Moving files to output directory...
+Finished moving files to output directory
+Wrote CGP file for project 'Block_Memory_64x24'.
