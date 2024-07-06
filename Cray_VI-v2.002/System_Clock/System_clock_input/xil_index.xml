@@ -1,5 +1,0 @@
-<xilinx:repository xilinx:timeStamp="Sat_Feb_10_14_17_12GMT2024.xml" xmlns:xilinx="http://www.xilinx.com">
-<xilinx:ipxact>
-<xilinx:entry xilinx:file="./System_Clock/System_clock_input.xml" xilinx:element="component" xilinx:spiritNS="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009" />
-</xilinx:ipxact>
-</xilinx:repository>
