@@ -8,6 +8,8 @@ E2LP Laboratory Exercise Documentation: http://grgur.irb.hr/Cray-E2LP/DSD_23_Cra
 
 The used FPGA on E2LP board is Xilinx xc6sxl45-2fgg676. The Xilinx ise project file is in Cray_VI-2.002/Cray-VI/Cray-VI.xise
 
+IMPORTANT: All sources are written with tabstop 3 (vi/vim ':se ts=3')!
+
 Remark: As the FPGA used on E2LP board does not have enough space to implement external DRAM access (allthough the DRAM is present on the board), this implementation uses only 24 KiW (per 64 bit) words of memory. An implementation on a larger FPGA would allow to use external memory, but the implementation may be tricky, due to parallel read/write capabilities of the Cray processor and strictly timed memory random access approach of this implementation. Memory banking, as done on the original Cray processor(s) shall be implemented and used.
 
 PS: The VI in Cray-VI is not the number 6, but the acronym for Virtue Infrastructure.
