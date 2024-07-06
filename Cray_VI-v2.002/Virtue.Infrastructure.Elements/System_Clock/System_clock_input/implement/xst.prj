@@ -1,0 +1,2 @@
+verilog work ../../System_clock_input.v
+verilog work ../example_design/System_clock_input_exdes.v
