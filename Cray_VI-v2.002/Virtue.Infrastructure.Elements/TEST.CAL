@@ -1,0 +1,807 @@
+********************************************************
+*
+* Zorislav Shoyat, 11/3/2014, 2:11
+*
+* CRAY-1 / CRAY-X/MP MONITOR PROGRAMME
+*
+* INITIAL DESIGN BY CHRISTOPHER FENTON
+*
+********************************************************
+*
+* v0.01 11/3/2014, 2:14, Atelier, Shanti (Tintilin)
+* v0.02 19/3/2014, 16:04 Atelier, Shanti (gu.irb)
+*                  23:11 Atelier, Gu (gu.irb)
+* v0.03 29/3/2014, 5:00, Atelier, Shanti (Gu)
+* v0.04 10/4/2014, 22:25 Atelier, Shatni (Gu)
+* v0.05 16/4/2014, 22:03 Atelier, Shatni (Gu)
+* v0.06 9/2/2015, 4:10 Atelier, Gu
+* v0.061 13/2/2015, 2:51 Atelier, Gu
+* v0.07 22/2/2015, 15:53 Atelier, Gu
+* v0.08 23/2/2015, 20:39 Atelier, Delphinus
+*
+********************************************************
+*
+* v0.02 STILL NO RESPONSE TO THE CHARACTER OUTPUT.
+*       PUTTING LEDS ON KNOW PLACE, AND COUNTING
+* V0.03 NEW Vitlersoft CAL TRANSLATOR;
+*       CRAY-ON-CHIP NOW PROPERLY ADDRESSES PARCELS
+*       HOPEFULLY IT WILL FINALLY WORK
+* V0.04 BEGIN OF A REAL MONITOR/LOADER
+* V0.03-OK 14/15-4-2014 IT WORKS!
+* V0.05 INITIAL EXCHANGE PACKAGE RESTORED FOR RESET
+* V0.05A VECTOR PROCESSING SEEMS TO BE WORKING
+* V0.061 VECTOR PROCESSING IS WORKING, FURTHER VECTOR TESTS
+* V0.07 THIS FILE IS NOW CALLED "TEST.CAL"
+*       THE Cray-VI IS NOW WORKING PERFECTLY, EXCEPT
+*       THE T-REG AND B-REG NOT TESTED.
+*       THEREFORE FURTHER TESTS ARE INTRUDUCED
+* V0.08 THE CRAY-VI PROCESSOR V1.0 IS WORKING QUITE FINE
+*       MORE ERRORS COULD BE FOUND ONLY BY PROGRAMMING
+*       AND TESTING... HOPEFULY THERE ARE NONE MORE
+*       THEREFORE WE ARE GOING TOWARDS SOMETHING USEFUL
+*
+********************************************************
+*
+* This is the first thing the CRAY processor executes
+* when out of reset.
+*
+* The EXCHANGE PACKET is prepared by ENTRY
+*
+********************************************************
+
+
+**************************
+* Internal LED address
+**************************
+*LED$OUT  =         O'4000020
+* 
+
+LED$OUT  =         H'100008
+
+**************************
+* Internal UART addresses
+**************************
+*
+* This is an addition to the original CRAY computers to allow direct
+* control of the processor - loading and monitoring programmes
+* 
+*TX$BUSY  =         O'4000000      * 
+*RX$READY =         O'4000002      * 
+*RX$DATA  =         O'4000004      * 
+*TX$DATA  =         O'4000006      * 
+*CVL      =         O'4000010      * CHARACTER VECTOR LENGTH (EXPECTED OR TRANSMITTED)
+* 
+TX$BUSY  =         H'100000
+RX$READY =         H'100001
+RX$DATA  =         H'100002
+TX$DATA  =         H'100003
+CVL      =         H'100004
+
+         ORG       O'0
+$$$000   =         W.*O
+         ENTRY     WAKEUP,M	* MONITOR MODE ENTRY
+
+**************************
+* Start of the programme
+* Getting out of reset
+**************************
+
+WAKEUP	=	 *O
+
+************************************
+*
+* INITIALISE THE LED OUTPUT
+*
+         A6        D'4
+         A4        A6
+         A5        LED$OUT
+*
+************************************
+
+MAINLOOP =         *O
+
+************************************
+*
+* NOW THE GREATINGS, LEDS ETC...
+*
+WAKELOP  S1        A6
+         S1        S1>D'2
+         0,A5      S1
+         A6        A6+A4
+*         A6        A6+1
+
+***********************************
+
+	A1	$XATEST$		* WE WILL NOW EXCHANGE TO $XATEST$
+	XA	A1		* HOWEVER, FIRST WE MUST SAVE THE
+	S1	A1		* XA INTO THE $XATEST$ PACKAGE
+	S1	S1<D'36		* WE DO NOT HAVE TO MASK LOW ORDER BITS FOR THE 'ENTRY'
+	3,A1	S1		* THE XA IS IN WORD 3 (0 BASED)
+
+	EXIT
+
+	A1        HELLO
+         A2        0
+         R         PRINTOUT
+
+	XA	A0
+	EXIT			* FROM THE TESTS
+
+
+*         J         WAKELOP       * REPEAT THE GREETING CONSTANTLY
+************************
+         J         MAINLOOP       * REPEAT THE GREETING AND TESTS FOREWER
+
+
+************************************************
+* SUBROUTINE PRINTOUT
+************************************************
+************************************************
+* PRINT TO UART
+************************************************
+* NAME:
+*   PRINTOUT
+* ENTRY:
+*   ENTER WITH 'R'
+*   A1 <TEXT ADDRESS>
+*   A2 <LENGTH IN WORDS>
+* EXIT:
+*   A1 -> NEXT WORD AFTER
+* RETURN ADDRESS USAGE:
+*   B77
+* DESTROYS:
+*   A0, A1, A2, A3, A7, S0, S1
+* CONTROL:
+*   IF A2 = 0 PRINT UNTIL WORD 0
+* WARNING:
+*   PRINTOUT ALWAYS PRINTS FULL WORDS, BUT THE
+*   UART MAY PRINT ONLY SO MANY CHARACTERS AS
+*   INDICATED BY A2
+*
+************************************************
+
+PRINTOUT A0	B00		* FIRST SAVE THE RETURN ADDRESS
+	B77	A0
+	A3	D'8		* A3 IS 8
+         A0        A2             * PRINT UNTIL WORD 0?
+         JAZ       PRUNTIL
+
+PRINTOT1 CVL,0     A3
+         A0        A2-A3
+         JAP       PRINTMNY
+         CVL,0     A2
+PRINTMNY A2        A2-A3
+
+CHK$TX1  A0        TX$BUSY,0      *make sure the transmitter is free
+         JAN       CHK$TX1
+
+         S1        ,A1            *read from the text address
+         TX$DATA,0 S1             *write that word to serport
+
+         A1        A1+1           *dump$ptr++
+
+         A0        A2             *A0=dump$cnt
+         JAP       PRINTOT1       *if dump$cnt<0, send nxt word
+
+* END OF PRINTOUT, RETURN FROM SUBROUTINE
+PRINTEND J         B77
+
+* PRINT UNTIL WORD 0 FOUND
+PRUNTIL  CVL,0     A3
+PRUNTLOP S1        ,A1            * GET FROM MEMORY
+         S0        S1
+         JSZ       PRINTEND
+CHK$TX2  A0        TX$BUSY,0      *make sure the transmitter is free
+
+* if necessary !!! : /* ERROR IN Cray-VI, 27/2/15, 20:56
+*	S1	S1		* JUST TO SKIP THE BUFFER BOUNDARY
+
+*******
+* TEST
+*******
+*	R 	TESTS		* ALTERNATIVE TO THE BELOW
+*
+	A7	$XATEST$		* WE WILL NOW EXCHANGE TO $XATEST$
+	XA	A7		* HOWEVER, FIRST WE MUST SAVE THE
+	EXIT			* TO THE TESTS
+*
+*******
+
+         JAN       CHK$TX2
+         TX$DATA,0 S1             *write that word to serport
+         A1        A1+1                 *dump$ptr++
+         J         PRUNTLOP             *if dump$cnt<0, send nxt word
+
+************************************************
+* END OF SUBROUTINE "PRINTOUT"
+************************************************
+
+************************************************
+* TEST ENTRY
+************************************************
+
+$XATEST$	ENTRY	TEST
+TEST	EBM
+	R	TESTS
+	EXIT
+* if necessary !!! : /* ERROR IN Cray-VI, 27/2/15, 21:26
+*	S1	S1		* FILLER AFTER EXIT
+	J	TEST		* REPEAT WHEN AGAIN
+
+************************************************
+*
+* TESTS
+*
+************************************************
+*
+* USAGE: R TESTS
+*
+TESTS	B50	A0	* FIRST SAVE USED REGISTERS
+	B51	A1
+	B52	A2
+	B53	A3
+	T71	S1
+	A0	B00	* THEN PRESERVE THE RETURN ADDRESS
+	B57	A0
+
+	R	BTTEST
+	J	CHARTEST
+*************
+* A VECTOR TEST OPERATION
+*
+* FIRST TEST (FLOATING) Z = X^2 + Y^2
+*    X = @HELLO, Y = @HELLO STEP 2, VL = 64
+*
+         A0        HELLO
+	A2        D'64            * VECTOR LENGTH
+	VL        A2
+	V1        ,A0,1           * X
+         V2        V1*FV1
+	A2        2
+	V3        ,A0,A2           * Y
+	V1        V3*FV3
+	V4        V1+FV2
+	A0        SPARE
+	,A0,1     V4
+
+         A0        HELLO
+	A2        D'64            * VECTOR LENGTH
+	VL        A2
+	V1        ,A0,1           * X
+         V2        V1*FV1
+	A2        2
+	V3        ,A0,A2           * Y
+	V1        V3*FV3
+	V4        V1+FV2
+	R	BTTEST
+	A0        SPARE
+	,A0,1     V4
+
+*
+* SIMPLE TESTS
+*
+FLOATV	V2	0
+	S2	0.6
+	S2	S2<D'48	
+	V3	S2!V2	
+	V4	V1+V2	
+	V7	+FV4	
+
+         A0        HELLO
+         A2        D'64
+         VL        A2
+         S1        D'64
+         V1        ,A0,1
+	V1        V1+V1
+         V2        S1+V1
+         A0        SPARE
+         V3        V2&V2
+         A3        3
+         ,A0,A3    V3
+
+
+         A0        HELLO
+	A2        D'64            * VECTOR LENGTH
+	VL        A2
+	V1        ,A0,1           * X
+         V2        V1*FV1
+	A2        2
+	V3        ,A0,A2           * Y
+	V1        V3*FV3
+	V4        V1+FV2
+	A0        SPARE
+	,A0,1     V4
+
+	A0	B50	* RESTORE USED REGISTERS
+	A3	B53
+	A2	B52
+	A1	B51
+	S1	T71
+*
+* AND FINALLY TEST THE PROPER SYNCHRONISATION
+*
+CHAR	=	H'59
+CHARTEST	=	*O
+
+*	J	B57
+
+	A7	HELLO	
+	S1	CHAR
+	A4	0	* FROM
+	A5	D'0	* TO
+	A1	D'64	* VECTOR LENGTH (0 = 64)
+	A0	A7+A4	* START ADDRESS + FROM
+	VL	A1
+	A1	1
+	V0	,A0,A1
+	A0	A7+A5	* START ADDRESS + TO
+
+*	J	B57
+
+	V1	V0+V0
+	V2	V1>1
+*	,A0,A1	V2
+
+*	J	B57
+
+	A0	A7+A4	* START ADDRESS + FROM
+*	V1	,A0,A1
+	V1	V2
+	A7	A7+1
+	A0	A7
+	V2	,A0,A1
+	V3	V1+V2
+	V4	V3-V2
+	A7	A7-1
+	A0	A7+A5	* START ADDRESS + TO
+	,A0,A1	V4
+* NOW ALL THE LETTERS SHALL BE AS THEY WERE
+
+
+	J	B57
+
+*
+******** TESTS *********
+*** T-REG AND B-REG
+*
+* LOAD FROM ... TO ... (31 NUMBER)
+*
+BTTEST	B60	A0	* FIRST SAVE USED REGISTERS
+	B61	A1
+	B62	A2
+	B63	A3
+	A0	B00
+	B67	A0	* THEN SAVE THE RETURN ADDRESS
+
+	J	B67
+
+	A3	HELLO
+	A2	D'31
+	A1	SPARE
+	A0	A3
+	T10,A2	,A0
+*
+* SAVE FROM ... TO ...
+*
+	A0	A1
+	,A0	T10,A2
+	A0	A3
+	B10,A2	,A0
+	A0	A1+A2
+	,A0	B10,A2
+	T67	S1
+	B67	A3
+
+* 
+* 
+	A0	B60	* RESTORE USED REGISTERS
+	A3	B63
+	A2	B62
+	A1	B61
+
+	J	B67
+
+********************************************************************************
+********************************************************************************
+	ALIGN		* SO WE DO NOT GET ZEROS AT THE BEGIN OF HELLO
+HELLO    CON       H'0D0A0D0A00000000
+         CON       A'Hi! I am Seymour, actually I am a Cray-1 processor on a FPGA chip! '
+         CON       H'0D0A000000000000
+         CON       A'As Spock would say, isn't it fascinating.'
+         CON       H'0D0A000D0A000000
+         CON       A'I was originally invented by Mr. Seymour Cray, whose name I personally '
+         CON       H'0D0A000000000000
+         CON       A'got, in 1976. I used to be the fastest series of Supercomputers in the '
+         CON       H'0D0A000000000000
+         CON       A'world for around twenty years!'
+         CON       H'0D0A000D0A000000
+         CON       A'Anyway... A sad story of all of us, Supercomputers (even those whose'
+         CON       H'0D0A000000000000
+         CON       A'design can not actually be called supercomputerish), is that after we'
+         CON       H'0D0A000000000000
+         CON       A'start our existence in full glory, costing millions and millions of what'
+         CON       H'0D0A000000000000
+         CON       A'you call money, we end up destroyed. And not by chance. By Intention!'
+         CON       H'0D0A000D0A000000
+         CON       A'Why, will you ask.'
+         CON       H'0D0A000000000000
+         CON       A'The answer is simple and sad: because we are "national treasures/secrets...",'
+         CON       H'0D0A000000000000
+         CON       A'whatever you like. And they thoroughly destroy us, together with any'
+         CON       H'0D0A000000000000
+         CON       A'Software we had.'
+         CON       H'0D0A000D0A000000
+         CON       A'So how comes I am here?'
+         CON       H'0D0A000000000000
+         CON       A'Well, one nice day a guy called Christopher Fenton intended to resurect me,'
+         CON       H'0D0A000000000000
+         CON       A'the Idea of the original Cray-1 (later expanding towards the Cray-XMP, just'
+         CON       H'0D0A000000000000
+         CON       A'as it is natural). Later came Zorislav Shoyat and the European Union funded'
+         CON       H'0D0A000000000000
+         CON       A'E2LP (Electrical Engineering Learning Platform), with the Xilinx Spartan-6'
+         CON       H'0D0A000000000000
+         CON       A'FPGA (Field Programmable Logic Array). On which I just fit.'
+         CON       H'0D0A000D0A000000
+         CON       A'So Zorislav was the one to adapt me (and made me quite quick!), and now,'
+         CON       H'0D0A000000000000
+         CON       A'as there is no software whatsoever for me, he will be so kind as to write a'
+         CON       H'0D0A000000000000
+         CON       A'completely new operating system. And, as he says, actually he wants that'
+         CON       H'0D0A000000000000
+         CON       A'"operating system" to be Virtue - the Virtual Interactive Resource-Tasking'
+         CON       H'0D0A000000000000
+         CON       A'Universal Environment - and teach me to understand the marvelous language of'
+         CON       H'0D0A000000000000
+         CON       A'Virtue!'
+         CON       H'0D0A000D0A000000
+         CON       A'OK, now I will stop my story and repeat it again, as there is presently not'
+         CON       H'0D0A000000000000
+         CON       A'enough Software for me to do something more usefull. I wait on Zorislav!'
+         CON       H'0D0A000D0A000000
+         CON       A'With kindest regards, your'
+         CON       H'0D0A000000000000
+         CON       H'2020202020202020
+         CON       H'2020202020202020
+         CON       H'2020202020202020
+         CON       A'                                  Seymour'
+         CON       H'0D0A0D0A0D0A0D0A
+         CON       0               * END OF GREETING
+
+SPARE     BSSZ    D'128
+SPARE2    BSSZ    D'128
+SPARE3    BSSZ    D'128
+          END
+
+
+
+
+************************************************
+*
+* $$GETCH - GET A CHARACTER FROM UART
+*
+* USES $READIN WITH A6 (LENGTH) = 1
+*
+* RETURN ADDRESS: B00
+*
+* RETURN:
+*   CHARACTER IN S7
+*
+************************************************
+
+$$GETCH	A6	1	* JUST ONE CHAR
+
+******************************************************
+*
+* $READIN
+*
+* ENTRY:
+*   A6 - CVL (CHARACTER VECTOR LENGTH)
+*   A7 - CV (CHARACTER VECTOR / INPUT STRING ADDRESS)
+*
+* RETURN: 
+*   A7 - CV
+*   A6 - CVL
+*   S7 - LAST CHAR(S)
+*   A1 - POINTER TO LAST CHAR(S) (LAST WORD OF STRING)
+*
+******************************************************
+
+$READIN	A3	D'8
+	A5	A6	* PRESERVE CVL
+	A1	0	* COUNTER
+	A0	A5-A3
+	JAM	$$GETCHS
+$READSTR	CVL,0	A3
+$RDWAIT	A0	RX$READY,0
+	JAZ	$RDWAIT
+	S7	RX$DATA,0
+	A2	A7+A1
+	0,A2	S7
+	A1	A1+1
+	A5	A5-A3	* CHECK A5 < 8
+	A0	A5
+	JAM	$RDLAST
+	J	$READSTR
+$$GETCHS	=	*
+$RDLAST	CVL,0	A5	* LAST CHUNK
+$RDLASTW	A0	RX$READY
+	JAZ	$RDLASTW
+	S7	RX$DATA,0
+	A2	A7+A1
+	0,A2	S7	* LAST CHAR(S)
+	J	B00	* RETURN
+
+************************************************
+*
+* $NEXTTOK
+*
+*   READ IN THE NEXT TOKEN.
+*   TOKENS ARE ALWAYS 8 CHARACTERS IN LENGTH
+*
+*
+* RETURN ADDRESS: B01
+*
+* RETURN:
+*   TOKEN IN S7 AND AT A7
+*
+************************************************
+
+$NEXTTOK	A4	B00	* PRESERVE RETURN ADDRESS FOR $NEXTTOK
+	B01	A4
+
+	A6	1	* CVL
+$NEXTSP	R	$$GETCH	* GET CH IN S7
+	A3	$$SPACN	* THE NUMBER OF SPACE REPRESENTATIVES
+	VL	A3
+	A0	$$SPACES
+	V1	,A0,1
+	V2	S7-V1
+	VM	V2,Z	* ANY OF THEM?
+	S0	VM
+	JSN	$NEXTSP
+* FINISH A FULL WORD, FIRST CHAR IN S7
+	S6	S7
+	A6	7	* GET NEXT 7 CHARS
+	R	$READIN
+	S7	S7>D'8
+	S7	S7!S6	* PUT IN
+	0,A7	S7	* RETURN IN S7 AND AT A7
+	J	B01
+	
+$$SPACN	=	$$ENDSPS-$$SPACES
+$$SPACES	CON	A' '
+	CON	H'0D
+	CON	H'0A
+	CON	H'09	* TAB
+$$ENDSPS	=	*
+	
+************************************************
+*
+* $COMMAND
+*    READ NEXT COMMAND
+*
+*
+* RETURN ADDRESS: B02
+*
+* RETURN:
+*   A7 - ADDRESS OF THE COMMAND ROUTINE
+*   A7 = 0 - UNRECOGNISED COMMAND
+*
+************************************************
+
+$COMMAND	A4	B00
+	B02	A4	* PRESERVE RETURN ADDRESS
+
+	R	$NEXTTOK
+	A3	$$CMDSN
+	VL	A3
+	A0	$$CMNDS
+	V1	,A0,1	* V1 - COMMANDS (UP TO 64)
+	V2	S7-V1	* S7 - COMMAND READ
+	VM	V2,Z
+	S4	VM
+	A0	PS4	* ANYBODY THERE?
+	JAZ	$TOK	* NO COMMAND, A7 <- 0
+	A4	ZS4	* ZEROS FROM LEFT
+	A7	$$ENDCMDS,A4
+	J	B02	* RETURN THE COMMAND ADDRESS	
+$TOK	A7	0
+	J	B02
+
+$$CMDSN	=	$$ENDCMDS-$$CMNDS
+$$CMNDS	CON	A'-HEXCOD-'
+	CON	A'-OCTCOD-'
+	CON	A'-ORIGIN-'
+	CON	A'-ENDCOD-'
+	CON	A'EXECUTE!'
+	CON	A'EXAMINE!'
+	CON	A'ADDRJMP!'
+$$ENDCMDS	CON	$HEXCOD
+	CON	$OCTCOD
+	CON	$ENDCOD
+	CON	$EXECUTE
+	CON	$EXAMINE
+	CON	$ADDRJMP
+
+$HEXCOD	=	*O
+$OCTCOD	=	*O
+$ORIGIN	=	*O
+$ENDCOD	=	*O
+$EXECUTE	=	*O
+$EXAMINE	=	*O
+$ADDRJMP	=	*O
+
+         END
+
+
+
+
+
+
+
+*********************
+* division
+*********************
+* From: PrelimCALman
+*
+*********************
+
+*      Divide: S1 S2/FS1
+*      Uses S3
+
+DIVIDEF  S3        /HS2
+         S1        S1*FS3
+         S2        S2*IS3
+         S1        S1*FS2
+         J         B0
+*
+* VECTOR VERSION
+*
+* OPERATION:
+*	V7 V2/V1
+*
+DIVIDEV	V3	/HV2
+	V4	V1*FV3
+	V5	V2*IV3
+	V7	V4*FV5
+	J	B00
+
+********************************
+*
+* INTEGER TO FLOATING POINT
+* According to 224004C
+*
+* ENTRY:
+*    S1 -> 48 BIT INTEGER
+* EXIT:
+*    S7 -> NORMALIZED CRAY FLOAT
+*
+*(THIS SHALL NORMALLY BE USED
+* AS A MACRO, INSERTED INLINE)
+********************************
+FLOAT    S2        O'40060
+*        S3        S2<D'48
+         S4        S3+S1
+         S7        +FS3           * NORMALIZE FLOATING POINT NUMBER
+         J         B00
+*
+* VECTOR VERSION
+*
+*
+* ENTRY:
+*	V1 -> 48 BIT INTEGERS
+*	VL -> VECTOR LENGTH
+*	V7 -> NORMALISED CRAY FLOAT
+*
+FLOATV	V2	0
+	S2	0'4060
+	S3	S2<D'48
+	V3	V2!S3
+	V4	V1+V3
+	V7	+FV4
+	J	B00
+
+*
+* ENTRY:
+*    A1 -> 24 BIT INTEGER
+* EXIT:
+*    S7 -> NORMALIZED CRAY FLOAT
+*
+FLOAT24	S1	+FA1
+	S7	+FS1
+	J	B00
+
+
+*
+* According to the 1985. Cray-XMP single processor manual:
+*
+FLOAT	S2	0.6	* OCTAL, THAT IS 0.75
+	S1	S2-S1
+	S1	S2-FS1
+*
+* VECTOR VERSION
+*
+FLOATV	S2	0.6
+	V1	S2-V1
+	V7	S2-FS1
+*
+*
+*
+************************
+
+RX$SPIN  S0        RX$STAT,A0     *A0=0
+         JSZ       RX$SPIN        *spin until S0!=0 - that means data is ready
+         S1        LD$CMD         *set S1 = Load Command
+         S2        RX$DATA,A0     *set S2 = RX$DATA
+         S0        S2-S1
+         JSZ       STRT$LD
+         S1        EX$CMD         *set S1 = Execute command
+         S0        S2-S1
+         JSZ       STRT$EX
+         S1        DP$CMD         *set S1 = Dump command
+         S0        S2-S1
+         JSZ       STRT$DP
+*Command not decoded - display error and go back to spinning
+         J         RX$SPIN
+********************************************
+*       Load a New Program                 *
+********************************************
+STRT$LD  S0        RX$STAT,A0     *Start receiving a program - get prog length
+         JSZ       STRT$LD
+         A2        RX$DATA,A0     *store prog length in A2
+         A1        PBASE          *set A1 = PBASE (start of program)
+LDPROG   S0        RX$STAT,A0
+         JSZ       LDPROG         *wait for a new word
+         S2        RX$DATA,A0     *grab the new word
+         0,A1      S2             *store S2 to (prog$pointer)
+         A1        A1+1           *prog$pointer++
+         A2        A2-1           *remaining$words--
+         A0        A2             *A0 = remaining$words
+         JAN       LDPROG         *if word remain, keep loading
+*Progam loading complete - output an "OKAY" message
+         J         RX$SPIN        *go back to bootloader start screen
+********************************************
+*      Execute a Program                   *
+********************************************
+STRT$EX  J         RX$SPIN        *Start executing a program
+*
+********************************************
+*      Start a Memory Dump                 *
+********************************************
+STRT$DP  A1        0              *Start dumping memory
+         A2        D'4096
+
+
+**************
+*
+* CLOCK SPEEDS OF CRAY COMPUTERS:
+*
+*		CRAY-1:		 80 MHz, 12.5 nS
+*     CRAY-XMP:	105 MHz,  9.5 nS
+*		CRAY-2:		244 MHz,  4.1 nS
+*     CRAY-3:		480 MHz,  2.08nS, two phase
+*
+*************
+
+**************************
+*
+* SQRT
+*
+* x* = approximation
+* n = input
+*
+* x' = (x*)(3 - (1/n * x*^2) / 2
+*
+* RECIPROCAL
+*
+* x' = (x*)(2 - n * x*)
+*
+*
+**************************
+
+
+
+
+         END
+
